@@ -1,0 +1,57 @@
+# Blender MTL File: ''
+# Material Count: 5
+newmtl Eye_Eye.png_Eye.png
+Ns 21.568627
+Ka 0.000000 0.000000 0.000000
+Kd 0.800000 0.800000 0.800000
+Ks 1.000000 1.000000 1.000000
+Ni 1.000000
+d 1.000000
+illum 2
+map_Kd Textures/Eye.png
+
+
+newmtl Face_FaceA.png_FaceA.png
+Ns 21.568627
+Ka 0.000000 0.000000 0.000000
+Kd 0.800000 0.800000 0.800000
+Ks 0.250000 0.250000 0.250000
+Ni 1.000000
+d 1.000000
+illum 2
+map_Kd Textures/FaceA.png
+
+
+newmtl Hand_Hand.png_Hand.png
+Ns 92.156863
+Ka 0.000000 0.000000 0.000000
+Kd 0.800000 0.800000 0.800000
+Ks 0.000000 0.000000 0.000000
+Ni 1.000000
+d 1.000000
+illum 2
+map_Kd Textures/Hand.png
+
+
+newmtl Shoe_She.pngs_She.png
+Ns 21.568627
+Ka 0.000000 0.000000 0.000000
+Kd 0.800000 0.800000 0.800000
+Ks 0.250000 0.250000 0.250000
+Ni 1.000000
+d 1.000000
+illum 2
+map_Kd Textures/She.png
+
+
+newmtl Skin_Belly.png_Belly.png
+Ns 21.568627
+Ka 0.000000 0.000000 0.000000
+Kd 0.800000 0.800000 0.800000
+Ks 0.250000 0.250000 0.250000
+Ni 1.000000
+d 1.000000
+illum 2
+map_Kd Textures/Belly.png
+
+
