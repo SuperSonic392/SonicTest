@@ -7,6 +7,7 @@ using static UnityEngine.GraphicsBuffer;
 
 public class HedgehogController : GameEntity
 {
+    public GameManager gameManager;
     public float frameMultiplier;
     public float scriptLock;
     public int rings;
@@ -30,6 +31,7 @@ public class HedgehogController : GameEntity
     public enum CharacterState
     {
         Walk,
+        Turn,
         Spin,
         Spindash,
         Die,
@@ -50,6 +52,7 @@ public class HedgehogController : GameEntity
     public GameObject ballModel;
     public Transform ShadowCaster;
     public Transform reticle;
+    public Transform head;
     // Start is called before the first frame update
     void Start()
     {
@@ -105,6 +108,11 @@ public class HedgehogController : GameEntity
     // Update is called once per frame
     void Update()
     {
+        if (spd < 2 && incline > 45)
+        {
+            transform.rotation = Quaternion.identity;
+        }
+        anim.SetFloat("Turn", 0.5f);
         if (uncapped && localPlayer)
         {
             delta = Time.deltaTime;
@@ -115,7 +123,12 @@ public class HedgehogController : GameEntity
         {
             rings = 0;
         }
-        OnEditor();
+        if (transform.position.y < gameManager.killPlane)
+        {
+            transform.position = Vector3.zero;
+            airspd = Vector3.zero;
+            spd = 0;
+        }
         if(scriptLock > 0)
         {
             scriptLock -= delta;
@@ -144,7 +157,7 @@ public class HedgehogController : GameEntity
         if (grounded)
         {
             roff = 0;
-            if (currentstate == CharacterState.Spin && spd <= 0)
+            if (currentstate == CharacterState.Spin && spd <= 0 || currentstate == CharacterState.Turn && spd <= 0)
             {
                 currentstate= CharacterState.Walk;
             }
@@ -177,6 +190,7 @@ public class HedgehogController : GameEntity
                     charge = 0;
                     currentstate = CharacterState.Spin;
                     movementAngle = chargeAngle;
+                    cameraImpact = 0.05f;
                 }
             }
 
@@ -192,24 +206,49 @@ public class HedgehogController : GameEntity
             }
             float joystickAngle = Vector3.SignedAngle(Vector3.forward, input.joystick, Vector3.up);
             float angle = Mathf.DeltaAngle(joystickAngle, movementAngle);
-            if (input.joystickRaw.magnitude > 0)
+            angle = Mathf.Abs(angle);
+            if (input.joystickRaw.magnitude > .9f)
             {
                 if(currentstate != CharacterState.Spin && currentstate != CharacterState.Spindash)
                 {
                     Debug.Log(angle);
-                    if (angle > 90)
+                    if (angle > 45)
                     {
-                        if (spd > 0)
+                        if (angle > 90)
                         {
-                            spd -= delta * 20;
+                            currentstate = CharacterState.Turn; 
+                            if (spd > 0)
+                            {
+                                spd -= delta * 50;
+                            }
+                            else
+                            {
+                                spd = 0;
+                            }
+                            if (spd <= 0)
+                            {
+                                movementAngle = Quaternion.LookRotation(input.joystick).eulerAngles.y;
+                                currentstate = CharacterState.Walk;
+                            }
                         }
                         else
                         {
-                            spd = 0;
+                            if (currentstate == CharacterState.Turn)
+                                currentstate = CharacterState.Walk;
+                            if (spd > 0)
+                            {
+                                spd -= delta * 20;
+                            }
+                            else
+                            {
+                                spd = 0;
+                            }
                         }
                     }
                     else
                     {
+                        if (currentstate == CharacterState.Turn)
+                            currentstate = CharacterState.Walk;
                         if (spd < 20)
                         {
                             spd += delta * 10;
@@ -222,6 +261,8 @@ public class HedgehogController : GameEntity
                 }
                 else
                 {
+                    if(currentstate == CharacterState.Turn)
+                        currentstate = CharacterState.Walk;
                     if (spd > 0)
                     {
                         spd -= delta * 5;
@@ -240,7 +281,9 @@ public class HedgehogController : GameEntity
                     }
                     else
                     {
-                        movementAngle = Quaternion.Slerp(Quaternion.Euler(0, movementAngle, 0), Quaternion.LookRotation(input.joystick), scaledTurnSpeed * delta).eulerAngles.y;
+                        anim.SetFloat("Turn", -(movementAngle - Quaternion.Slerp(Quaternion.Euler(0, movementAngle, 0), Quaternion.LookRotation(input.joystick), scaledTurnSpeed * delta).eulerAngles.y) / 30 + 0.5f);
+                        if (currentstate != CharacterState.Turn)
+                            movementAngle = Quaternion.Slerp(Quaternion.Euler(0, movementAngle, 0), Quaternion.LookRotation(input.joystick), scaledTurnSpeed * delta).eulerAngles.y;
                     }
                 }
                 else
@@ -253,6 +296,10 @@ public class HedgehogController : GameEntity
             }
             else
             {
+                if(currentstate == CharacterState.Turn)
+                {
+                    currentstate = CharacterState.Walk;
+                }
                 if(spd != 0)
                 {
                     if (spd > 0)
@@ -557,8 +604,10 @@ public class HedgehogController : GameEntity
     public bool mouseLock = true;
     public float speedDist;
     public float zoomDist;
+    public float cameraImpact;
     private void moveCamera()
     {
+        cameraImpact += delta / 2;
         speedDist = Mathf.Lerp(speedDist, ((airspd.magnitude + (charge/2)) / 100 + 1), delta * 5);
         zoomDist = Mathf.Lerp(zoomDist, distance, delta * 5);
         if(zoomDist < 1)
@@ -568,7 +617,7 @@ public class HedgehogController : GameEntity
             rollModel.SetActive(false);
             ballModel.SetActive(false);
         }
-        cameraTransform.parent.position = transform.position;
+        cameraTransform.parent.position = Vector3.Lerp(cameraTransform.parent.position, transform.position, cameraImpact);
         cameraTransform.parent.rotation = Quaternion.Lerp(cameraTransform.parent.rotation, transform.rotation, delta * 10);
         if (Mouse.current.middleButton.wasPressedThisFrame) //soinc utopia style mouse locking
         {
